@@ -1,40 +1,36 @@
+import os
 import uuid
-from datetime import datetime
 import json
+from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.operators.dummy_operator import DummyOperator
-# from airflow.operators.sensor import FileSensor
+from airflow.sensors.filesystem import FileSensor
 
 
 # Correlation id for training job (this can be also found on MLFLow tracking)
 correlation_id = uuid.uuid4()
 
-# to avoid copy/paste jason file in triggering airflow
+
 def load_config():
-    config_path = "/opt/airflow/dags/ml_pipeline_config.json"  
+    config_path = "ml_pipeline_config.json"  # Update the path to your JSON file
     with open(config_path) as f:
         return json.load(f)
 
+
 def choose_to_do_preprocessing(**kwargs):
-    to_preprocess = bool(kwargs['dag_run'].conf.get('enable_preprocess'))
+    config = kwargs['task_instance'].xcom_pull(task_ids='load_config_task')
+    to_preprocess = config.get("enable_preprocess", False)
     if to_preprocess:
         return "preprocess_raw_audio"
     else:
         return "train_job"
 
-# def choose_to_do_preprocessing(**kwargs):
-#     config = kwargs['task_instance'].xcom_pull(task_ids='load_config_task')
-#     to_preprocess = config.get("enable_preprocess", False)
-#     if to_preprocess:
-#         return "preprocess_raw_audio"
-#     else:
-#         return "train_job"
-    
+
 # def daily_routine():
-    # print("Executing daily routine...")
+#     print("Executing daily routine...")
 
 
 with DAG(
@@ -44,7 +40,7 @@ with DAG(
         catchup=False) as dag:
 
     start = DummyOperator(task_id="start")
-    
+
     # Task for loading the configuration from the JSON file
     load_config_task = PythonOperator(
         task_id="load_config_task",
@@ -53,19 +49,18 @@ with DAG(
     )
 
     # Wait for new files to arrive in the data/ directory
-    # wait_for_data = FileSensor(
-    #     task_id="wait_for_data",
-    #     filepath="data/",
-    #     poke_interval=300,  # Check every 5 minutes
-    #     timeout=600,  # Timeout after 10 minutes
-    #     dag=dag
-    # )
+    wait_for_data = FileSensor(
+        task_id="wait_for_data",
+        filepath="data/",
+        poke_interval=300,  # Check every 5 minutes
+        timeout=600,  # Timeout after 10 minutes
+        dag=dag
+    )
 
     branch = BranchPythonOperator(
         task_id="check_to_preprocess_or_not",
-        python_callable=choose_to_do_preprocessing
-        # ,
-        # provide_context=True
+        python_callable=choose_to_do_preprocessing,
+        provide_context=True
     )
 
     # Task for running data preprocessing task
@@ -90,31 +85,30 @@ with DAG(
         dag=dag,
         trigger_rule=TriggerRule.ONE_SUCCESS
     )
-    
-     # Task running our check for best model
+
+    # Task running our check for best model
     check_task = BashOperator(
-    task_id='check_model',
-    bash_command='python ${MY_LOCAL_ASSETS}/check_model.py',
-    dag=dag,
-    trigger_rule=TriggerRule.ONE_SUCCESS
+        task_id='check_model',
+        bash_command='python ${MY_LOCAL_ASSETS}/check_model.py',
+        dag=dag,
+        trigger_rule=TriggerRule.ONE_SUCCESS
     )
-    
+
     complete = DummyOperator(task_id="complete", trigger_rule=TriggerRule.ONE_SUCCESS)
 
     # DAG which define steps to run data preprocessing and training job pipeline with input options
-    # start >> wait_for_data >> branch
     start >> load_config_task >> branch
     preprocessing_task.set_upstream(branch)
     training_task.set_upstream([branch, preprocessing_task])
     check_task.set_upstream([training_task])
     complete.set_upstream(check_task)
 
-    # # Define the daily routine task
-    # daily_routine_task = PythonOperator(
-    #     task_id="daily_routine",
-    #     python_callable=daily_routine,
-    #     dag=dag
-    # )
+    # Define the daily routine task
+    daily_routine_task = PythonOperator(
+        task_id="daily_routine",
+        python_callable=daily_routine,
+        dag=dag
+    )
 
-    # # Schedule the daily routine task to run every day
-    # daily_routine_task >> start
+    # Schedule the daily routine task to run every day
+    daily_routine_task >> start

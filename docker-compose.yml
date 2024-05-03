@@ -37,7 +37,7 @@ services:
     ports:
       - 5000:5000
     volumes:
-      # - ./mlflows:/mlflow/artifacts
+      - ./mlflows:/mlflow/artifacts
       - ./:/workspace/
     depends_on:
       postgresql:

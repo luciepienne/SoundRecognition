@@ -34,7 +34,7 @@ COPY scripts/ml/ ${MY_LOCAL_ASSETS}
 COPY data/ ${MY_LOCAL_ASSETS}/raw_input_data/
 
 # Install MLFlow for remote tracking since we don't want to add this dependency to the audio_classifier
-RUN pip install mlflow
+RUN pip install mlflow datetime
 
 
 # Définir les permissions sur les répertoires en mode root

@@ -1,5 +1,5 @@
 {
-    "enable_preprocess": true,
+    "enable_preprocess": false,
     "preprocess": {
       "dataset_version": 1,
       "audio_dir": "/opt/airflow/local-assets/raw_input_data/recordings",

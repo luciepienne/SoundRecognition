@@ -83,8 +83,14 @@ def train(
         batch_size=data_batch_size,
         callbacks=[checkpoint]
     )
+
     # Run evaluation
     metrics = model.evaluate(validation_set, verbose=0)
+
+    # Print metrics logged during training
+    print("Metrics logged during training:")
+    for i, metric_name in enumerate(model.metrics_names):
+        print(f"{metric_name}: {metrics[i]}")
 
     # Save model
     model.save(
@@ -96,3 +102,4 @@ def train(
 
 if __name__ == "__main__":
     train()
+    

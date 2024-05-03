@@ -3,7 +3,7 @@ name: Test MLOps Infra
 on:
   push:
     branches:
-    - main
+    # - main
     - features/**
     - dependabot/**
   pull_request:
