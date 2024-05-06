@@ -14,9 +14,11 @@ import essentia.standard as estd
 class AudioProcessor(ABC):
 
     @staticmethod
-    def load_audio(audio_file: str, label: str, end_time: int = 1, eq_filter: bool = True):
+    def load_audio(
+        audio_file: str, label: str, end_time: int = 1, eq_filter: bool = True
+    ):
         """Load and decode a audio file, downmix to mono if necessary and optionally apply Equal loudness filter
-         and end time"""
+        and end time"""
         output = dict()
         # essentia AudioLaoder
         audios, in_sample_rate, n_channels, md5, _, _ = estd.AudioLoader(
@@ -39,7 +41,9 @@ class AudioProcessor(ABC):
             output["signal"] = eq_signal
 
         # Only keep certain sec of audio. If less data do zero padding
-        output["signal"] = AudioProcessor.fix_audio_length(output["signal"], size=int((in_sample_rate * end_time) / 2))
+        output["signal"] = AudioProcessor.fix_audio_length(
+            output["signal"], size=int((in_sample_rate * end_time) / 2)
+        )
         output["len"] = len(output["signal"])
         output["filename"] = os.path.basename(audio_file)
 
@@ -65,8 +69,7 @@ class AudioProcessor(ABC):
         output = AudioProcessor.load_audio(audio_file, label, **kwargs)
 
         downsampled_audio = estd.Resample(
-            inputSampleRate=output["sr"],
-            outputSampleRate=to_samplerate
+            inputSampleRate=output["sr"], outputSampleRate=to_samplerate
         )(output["signal"])
 
         output["len"] = len(downsampled_audio)
@@ -78,6 +81,7 @@ class AudioProcessor(ABC):
 
 class AudioToTFRecordProcessor(AudioProcessor):
     """Class for processing audio files to a TF record dataset"""
+
     def __init__(self, audio_dir: str, output_dir: str) -> None:
         self.audio_dir = audio_dir
         self.output_dir = output_dir
@@ -104,13 +108,20 @@ class AudioToTFRecordProcessor(AudioProcessor):
         array = tf.io.serialize_tensor(array)
         return array
 
-    def get_audio_files(self, allowed_formats: List[str] = [".wav", ".mp3", ".flac", ".ogg"]):
-        audios = [audio_file for audio_file in os.listdir(self.audio_dir)
-                  if os.path.splitext(audio_file)[1] in allowed_formats]
+    def get_audio_files(
+        self, allowed_formats: List[str] = [".wav", ".mp3", ".flac", ".ogg"]
+    ):
+        audios = [
+            audio_file
+            for audio_file in os.listdir(self.audio_dir)
+            if os.path.splitext(audio_file)[1] in allowed_formats
+        ]
         return audios
 
     @staticmethod
-    def get_train_validation_split(audio_files: List[str], train_ratio: float = 0.8) -> Tuple:
+    def get_train_validation_split(
+        audio_files: List[str], train_ratio: float = 0.8
+    ) -> Tuple:
         """Given a list of audio filenames generate train-validation splits based on a ratio"""
         training_length = int(len(audio_files) * train_ratio)
         validation_length = int(len(audio_files) - training_length)
@@ -122,23 +133,27 @@ class AudioToTFRecordProcessor(AudioProcessor):
     def parse_audio_feature_to_tf(self, audio_data: Dict) -> tf.train.Example:
 
         data = {
-            'sr': self._int64_feature(audio_data["sr"]),
-            'len': self._int64_feature(audio_data["len"]),
-            'signal': self._bytes_feature(self.serialize_array(audio_data["signal"])),
-            'label': self._int64_feature(int(audio_data["label"])),
-            'md5': self._bytes_feature(self.serialize_array(audio_data["md5"])),
-            'filename': self._bytes_feature(self.serialize_array(audio_data["filename"]))
+            "sr": self._int64_feature(audio_data["sr"]),
+            "len": self._int64_feature(audio_data["len"]),
+            "signal": self._bytes_feature(self.serialize_array(audio_data["signal"])),
+            "label": self._int64_feature(int(audio_data["label"])),
+            "md5": self._bytes_feature(self.serialize_array(audio_data["md5"])),
+            "filename": self._bytes_feature(
+                self.serialize_array(audio_data["filename"])
+            ),
         }
         out = tf.train.Example(features=tf.train.Features(feature=data))
         return out
 
-    def to_tf_records(self,
-                      audio_files: List[str],
-                      dataset_name: str,
-                      version: str = "1",
-                      split: str = "train",
-                      processor_callback=None,
-                      **kwargs) -> None:
+    def to_tf_records(
+        self,
+        audio_files: List[str],
+        dataset_name: str,
+        version: str = "1",
+        split: str = "train",
+        processor_callback=None,
+        **kwargs,
+    ) -> None:
         """Iterate through audio files, decode and write it to TF record"""
         if not processor_callback:
             processor_callback = self.load_audio
@@ -152,9 +167,9 @@ class AudioToTFRecordProcessor(AudioProcessor):
         writer = tf.io.TFRecordWriter(tf_record_file)
 
         with tqdm(
-                total=len(audio_files),
-                file=sys.stdout,
-                desc="audio_classifier:Pre-processing audio files and writing to TFRecords..."
+            total=len(audio_files),
+            file=sys.stdout,
+            desc="audio_classifier:Pre-processing audio files and writing to TFRecords...",
         ) as progress_bar:
 
             filenames = list()
@@ -178,7 +193,11 @@ class AudioToTFRecordProcessor(AudioProcessor):
 
                 progress_bar.update(1)
 
-            index_df = pd.DataFrame.from_dict({"filename": filenames, "md5": md5s, "label": labels})
-            index_df.to_csv(os.path.join(dataset_path, version, f"{split}-index.csv"), index=False)
+            index_df = pd.DataFrame.from_dict(
+                {"filename": filenames, "md5": md5s, "label": labels}
+            )
+            index_df.to_csv(
+                os.path.join(dataset_path, version, f"{split}-index.csv"), index=False
+            )
 
         writer.close()

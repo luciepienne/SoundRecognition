@@ -2,9 +2,11 @@ import os
 import mlflow
 import tensorflow as tf
 
+
 def load_model_from_artifact(artifact_path):
     model_path = os.path.join(artifact_path, "model.h5")
     return tf.keras.models.load_model(model_path)
+
 
 def select_best_model(artifact_paths):
     best_accuracy = 0.0
@@ -20,6 +22,7 @@ def select_best_model(artifact_paths):
             best_model = model
 
     return best_model, best_accuracy
+
 
 if __name__ == "__main__":
     # Get artifact paths from MLflow

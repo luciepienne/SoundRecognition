@@ -1,7 +1,11 @@
 import pytest
 import tensorflow as tf
 from audio_classifier.layers import MelSpecLayer, AudioCNNPreprocessingLayer
-from audio_classifier.layers import AudioCNNFrontEndLayer, AudioCNNEmbeddingLayer, AudioCNNActivationLayer
+from audio_classifier.layers import (
+    AudioCNNFrontEndLayer,
+    AudioCNNEmbeddingLayer,
+    AudioCNNActivationLayer,
+)
 
 
 @pytest.mark.ml

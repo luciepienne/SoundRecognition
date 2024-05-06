@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Union
 
@@ -9,12 +8,12 @@ class BaseAudioDataset(ABC):
 
     # schema for audio TF records
     tfr_schema: Dict = {
-        'sr': tf.io.FixedLenFeature([], tf.int64),
-        'len': tf.io.FixedLenFeature([], tf.int64),
-        'signal': tf.io.FixedLenFeature([], tf.string),
-        'label': tf.io.FixedLenFeature([], tf.int64),
-        'md5': tf.io.FixedLenFeature([], tf.string),
-        'filename': tf.io.FixedLenFeature([], tf.string),
+        "sr": tf.io.FixedLenFeature([], tf.int64),
+        "len": tf.io.FixedLenFeature([], tf.int64),
+        "signal": tf.io.FixedLenFeature([], tf.string),
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "md5": tf.io.FixedLenFeature([], tf.string),
+        "filename": tf.io.FixedLenFeature([], tf.string),
     }
 
     @abstractmethod
@@ -26,11 +25,11 @@ class BaseAudioDataset(ABC):
         """Parse all the columns inside a single TFRecord element of BaseAudioDataset"""
         sample = tf.io.parse_single_example(element, BaseAudioDataset.tfr_schema)
         # unpack sample tuple
-        sample_rate = sample['sr']
-        audio_length = sample['len']
-        audio_signal = sample['signal']
-        label = sample['label']
-        md5 = sample['md5']
+        sample_rate = sample["sr"]
+        audio_length = sample["len"]
+        audio_signal = sample["signal"]
+        label = sample["label"]
+        md5 = sample["md5"]
         filename = sample["filename"]
         # parse audio signal data
         audio_signal = tf.io.parse_tensor(audio_signal, out_type=tf.float32)
@@ -41,7 +40,9 @@ class BaseAudioDataset(ABC):
     @staticmethod
     def _parse_tfr_audio_label_element(element) -> Tuple:
         """Parse only the audio signal and label data from a single TFRecord element of BaseAudioDataset"""
-        audio_signal, _, label, _, _ = BaseAudioDataset._parse_tfr_all_audio_element(element)
+        audio_signal, _, label, _, _ = BaseAudioDataset._parse_tfr_all_audio_element(
+            element
+        )
         return audio_signal, label
 
     @staticmethod
@@ -50,9 +51,7 @@ class BaseAudioDataset(ABC):
         # create the dataset
         dataset = tf.data.TFRecordDataset(filename)
         # pass every single feature through our mapping function
-        dataset = dataset.map(
-            parser_func
-        )
+        dataset = dataset.map(parser_func)
         return dataset
 
 
@@ -66,7 +65,9 @@ class RecordingsDataset(BaseAudioDataset):
         if full_schema:
             return self._load_dataset(self.filename, self._parse_tfr_all_audio_element)
         else:
-            return self._load_dataset(self.filename, self._parse_tfr_audio_label_element)
+            return self._load_dataset(
+                self.filename, self._parse_tfr_audio_label_element
+            )
 
     def get_dataset_as_batches(self, batch_size: int = 32):
         """Get dataset as batches for training jobs with given parameters"""

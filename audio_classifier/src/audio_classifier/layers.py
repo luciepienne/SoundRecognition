@@ -4,12 +4,10 @@ import tensorflow_io as tfio
 
 class AudioCNNFrontEndLayer(tf.keras.layers.Layer):
     """Custom front-end CNN layer with pooling and batch norm for AudioCNn model"""
-    def __init__(self,
-                 n_filters=32,
-                 kernal_size=3,
-                 strides=(1, 1),
-                 activation="relu",
-                 **kwargs) -> None:
+
+    def __init__(
+        self, n_filters=32, kernal_size=3, strides=(1, 1), activation="relu", **kwargs
+    ) -> None:
         super(AudioCNNFrontEndLayer, self).__init__()
         # params
         self.n_filters = n_filters
@@ -23,7 +21,7 @@ class AudioCNNFrontEndLayer(tf.keras.layers.Layer):
             self.kernal_size,
             strides=self.strides,
             padding="same",
-            activation=self.activation
+            activation=self.activation,
         )
         self.norm1 = tf.keras.layers.BatchNormalization()
         self.pool = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))
@@ -43,7 +41,7 @@ class AudioCNNFrontEndLayer(tf.keras.layers.Layer):
                 "n_filters": self.n_filters,
                 "kernal_size": self.kernal_size,
                 "strides": self.strides,
-                "activation": self.activation
+                "activation": self.activation,
             }
         )
         return config
@@ -51,6 +49,7 @@ class AudioCNNFrontEndLayer(tf.keras.layers.Layer):
 
 class AudioCNNEmbeddingLayer(tf.keras.layers.Layer):
     """Custom dense layer for trained embeddings of AudioCNN model"""
+
     def __init__(self, num_dense_layer=10, activation="relu") -> None:
         super(AudioCNNEmbeddingLayer, self).__init__()
         # params
@@ -69,17 +68,17 @@ class AudioCNNEmbeddingLayer(tf.keras.layers.Layer):
     def get_config(self):
         config = super(AudioCNNEmbeddingLayer, self).get_config()
         config.update(
-            {
-                "num_dense_layer": self.num_dense_layer,
-                "activation": self.activation
-            }
+            {"num_dense_layer": self.num_dense_layer, "activation": self.activation}
         )
         return config
 
 
 class AudioCNNActivationLayer(tf.keras.layers.Layer):
     """Custom activation layer for AudioCNN model"""
-    def __init__(self, dropout_rate=0.5, num_dense_layer=10, activation="softmax", **kwargs) -> None:
+
+    def __init__(
+        self, dropout_rate=0.5, num_dense_layer=10, activation="softmax", **kwargs
+    ) -> None:
         super(AudioCNNActivationLayer, self).__init__()
         # params
         self.dropout_rate = dropout_rate
@@ -89,7 +88,9 @@ class AudioCNNActivationLayer(tf.keras.layers.Layer):
         # define layers
         self.norm = tf.keras.layers.BatchNormalization()
         self.dropout = tf.keras.layers.Dropout(self.dropout_rate)
-        self.dense = tf.keras.layers.Dense(self.num_dense_layer, activation=self.activation)
+        self.dense = tf.keras.layers.Dense(
+            self.num_dense_layer, activation=self.activation
+        )
 
     def call(self, inputs) -> tf.Tensor:
         x = self.norm(inputs)
@@ -103,7 +104,7 @@ class AudioCNNActivationLayer(tf.keras.layers.Layer):
             {
                 "dropout_rate": self.dropout_rate,
                 "num_dense_layer": self.num_dense_layer,
-                "activation": self.activation
+                "activation": self.activation,
             }
         )
         return config
@@ -111,13 +112,16 @@ class AudioCNNActivationLayer(tf.keras.layers.Layer):
 
 class AudioCNNPreprocessingLayer(tf.keras.layers.Layer):
     """Layer to preprocess and augment input log mel spectrogram into image"""
+
     def __init__(self, image_height: int = 256, image_width: int = 256):
         super(AudioCNNPreprocessingLayer, self).__init__()
         self.image_height = image_height
         self.image_width = image_width
         # keras preprocessing layers
         self.rescale = tf.keras.layers.experimental.preprocessing.Rescaling(1.0 / 255)
-        self.flip = tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical")
+        self.flip = tf.keras.layers.experimental.preprocessing.RandomFlip(
+            "horizontal_and_vertical"
+        )
         self.rotate = tf.keras.layers.experimental.preprocessing.RandomRotation(0.2)
 
     def to_image(self, log_mel_specs):
@@ -127,7 +131,11 @@ class AudioCNNPreprocessingLayer(tf.keras.layers.Layer):
         image = tf.image.resize(image, (self.image_height, self.image_width))
         image = tf.image.per_image_standardization(image)
         # no augmentation at this stage
-        image = (image - tf.reduce_mean(image)) / (tf.reduce_max(image) * tf.reduce_min(image)) * 255.0
+        image = (
+            (image - tf.reduce_mean(image))
+            / (tf.reduce_max(image) * tf.reduce_min(image))
+            * 255.0
+        )
         image = tf.image.grayscale_to_rgb(image)
         return image
 
@@ -153,16 +161,17 @@ class AudioCNNPreprocessingLayer(tf.keras.layers.Layer):
 
 class MelSpecLayer(tf.keras.layers.Layer):
     """Layer to compute Log mel spectrogram from an audio input"""
+
     def __init__(
-            self,
-            frame_length=512,
-            frame_step=256,
-            fft_length=None,
-            sampling_rate=8000,
-            num_mel_bands=256,
-            freq_min=40,
-            freq_max=4000,
-            **kwargs,
+        self,
+        frame_length=512,
+        frame_step=256,
+        fft_length=None,
+        sampling_rate=8000,
+        num_mel_bands=256,
+        freq_min=40,
+        freq_max=4000,
+        **kwargs,
     ):
         super(MelSpecLayer, self).__init__(**kwargs)
         self.frame_length = frame_length

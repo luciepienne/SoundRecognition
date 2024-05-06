@@ -15,12 +15,8 @@ def pytest_configure(config):
     - @pytest.mark.data
     """
     # we might want to avoid running tests related to triton client in the BB pipeline and test it locally instead.
-    config.addinivalue_line(
-        "markers", "ml: mark tests related to ml part of library"
-    )
-    config.addinivalue_line(
-        "markers", "data: mark tests related to data processing"
-    )
+    config.addinivalue_line("markers", "ml: mark tests related to ml part of library")
+    config.addinivalue_line("markers", "data: mark tests related to data processing")
 
 
 @pytest.fixture(scope="session")
@@ -45,10 +41,7 @@ def audio_cnn_yaml_config(test_model_config_file):
 
 @pytest.fixture(scope="session")
 def audio_to_tfrecord_processor(audio_dir, test_dataset_dir):
-    return AudioToTFRecordProcessor(
-        audio_dir=audio_dir,
-        output_dir=test_dataset_dir
-    )
+    return AudioToTFRecordProcessor(audio_dir=audio_dir, output_dir=test_dataset_dir)
 
 
 @pytest.fixture(scope="session")

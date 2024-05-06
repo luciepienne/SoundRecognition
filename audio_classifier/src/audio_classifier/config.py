@@ -1,4 +1,3 @@
-
 import yaml
 from pydantic import BaseModel
 from typing import Any, Optional, Dict
@@ -44,6 +43,7 @@ class AudioCNNModelConfig(BaseModel):
 
 class YAMLConfig:
     """Base class for yaml config"""
+
     def __init__(self, filename: str):
         self.filename = filename
         self.config = self.load(filename)
@@ -67,6 +67,7 @@ class YAMLConfig:
 
 class AudioCNNYAMLConfig(YAMLConfig):
     """Class for loading config for audio cnn model"""
+
     def __init__(self, filename: str):
         super(AudioCNNYAMLConfig, self).__init__(filename)
 

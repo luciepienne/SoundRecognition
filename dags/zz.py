@@ -21,7 +21,7 @@ def load_config():
 
 
 def choose_to_do_preprocessing(**kwargs):
-    config = kwargs['task_instance'].xcom_pull(task_ids='load_config_task')
+    config = kwargs["task_instance"].xcom_pull(task_ids="load_config_task")
     to_preprocess = config.get("enable_preprocess", False)
     if to_preprocess:
         return "preprocess_raw_audio"
@@ -34,18 +34,21 @@ def choose_to_do_preprocessing(**kwargs):
 
 
 with DAG(
-        dag_id="audiocnn_ml_pipeline_dag",
-        schedule_interval=None,
-        start_date=datetime(2022, 3, 3,),
-        catchup=False) as dag:
+    dag_id="audiocnn_ml_pipeline_dag",
+    schedule_interval=None,
+    start_date=datetime(
+        2022,
+        3,
+        3,
+    ),
+    catchup=False,
+) as dag:
 
     start = DummyOperator(task_id="start")
 
     # Task for loading the configuration from the JSON file
     load_config_task = PythonOperator(
-        task_id="load_config_task",
-        python_callable=load_config,
-        dag=dag
+        task_id="load_config_task", python_callable=load_config, dag=dag
     )
 
     # Wait for new files to arrive in the data/ directory
@@ -54,44 +57,48 @@ with DAG(
         filepath="data/",
         poke_interval=300,  # Check every 5 minutes
         timeout=600,  # Timeout after 10 minutes
-        dag=dag
+        dag=dag,
     )
 
     branch = BranchPythonOperator(
         task_id="check_to_preprocess_or_not",
         python_callable=choose_to_do_preprocessing,
-        provide_context=True
+        provide_context=True,
     )
 
     # Task for running data preprocessing task
     preprocessing_task = BashOperator(
         task_id="preprocess_raw_audio",
         bash_command="python ${MY_LOCAL_ASSETS}/preprocess_audio.py "
-                     "--dataset-version {{ dag_run.conf['preprocess']['dataset_version'] }} "
-                     "--audio-dir {{ dag_run.conf['preprocess']['audio_dir'] }} "
-                     "--output-dir {{ dag_run.conf['preprocess']['output_dir'] }}",
-        dag=dag
+        "--dataset-version {{ dag_run.conf['preprocess']['dataset_version'] }} "
+        "--audio-dir {{ dag_run.conf['preprocess']['audio_dir'] }} "
+        "--output-dir {{ dag_run.conf['preprocess']['output_dir'] }}",
+        dag=dag,
     )
 
-    script_path = "python ${MY_LOCAL_ASSETS}/train.py" + f" --correlation-id {correlation_id}"
-    script_args = " --dataset-path {{ dag_run.conf['train']['dataset_path'] }} " \
-                  "--n-epochs {{ dag_run.conf['train']['n_epochs'] }} " \
-                  "--data-batch-size {{ dag_run.conf['train']['data_batch_size'] }} " \
-                  "--model-yaml-config {{ dag_run.conf['train']['model_yaml_config'] }}"
+    script_path = (
+        "python ${MY_LOCAL_ASSETS}/train.py" + f" --correlation-id {correlation_id}"
+    )
+    script_args = (
+        " --dataset-path {{ dag_run.conf['train']['dataset_path'] }} "
+        "--n-epochs {{ dag_run.conf['train']['n_epochs'] }} "
+        "--data-batch-size {{ dag_run.conf['train']['data_batch_size'] }} "
+        "--model-yaml-config {{ dag_run.conf['train']['model_yaml_config'] }}"
+    )
     # Task running our ML training job
     training_task = BashOperator(
         task_id=f"train_job",
         bash_command=script_path + script_args,
         dag=dag,
-        trigger_rule=TriggerRule.ONE_SUCCESS
+        trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
     # Task running our check for best model
     check_task = BashOperator(
-        task_id='check_model',
-        bash_command='python ${MY_LOCAL_ASSETS}/check_model.py',
+        task_id="check_model",
+        bash_command="python ${MY_LOCAL_ASSETS}/check_model.py",
         dag=dag,
-        trigger_rule=TriggerRule.ONE_SUCCESS
+        trigger_rule=TriggerRule.ONE_SUCCESS,
     )
 
     complete = DummyOperator(task_id="complete", trigger_rule=TriggerRule.ONE_SUCCESS)
@@ -105,9 +112,7 @@ with DAG(
 
     # Define the daily routine task
     daily_routine_task = PythonOperator(
-        task_id="daily_routine",
-        python_callable=daily_routine,
-        dag=dag
+        task_id="daily_routine", python_callable=daily_routine, dag=dag
     )
 
     # Schedule the daily routine task to run every day

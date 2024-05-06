@@ -1,10 +1,11 @@
 import os
 import mlflow
 
+
 def print_mlflow_info():
     # Enable tracking to our remote MLFlow server
     mlflow.set_tracking_uri(os.getenv("MLFLOW_REMOTE_TRACKING_URI"))
-    run_infos = mlflow.search_runs(search_all_experiments=True).to_dict('records')
+    run_infos = mlflow.search_runs(search_all_experiments=True).to_dict("records")
 
     for run_info in run_infos:
         run_id = run_info["run_id"]  # Access run_id from dictionary
@@ -15,10 +16,11 @@ def print_mlflow_info():
             print(f"  {key}: {value}")
         print("\n")
 
+
 def select_best_model():
     mlflow.set_tracking_uri(os.getenv("MLFLOW_REMOTE_TRACKING_URI"))
     # Get run information for recent runs
-    run_infos = mlflow.search_runs(search_all_experiments=True).to_dict('records')
+    run_infos = mlflow.search_runs(search_all_experiments=True).to_dict("records")
     best_accuracy = 0.0
     best_run_id = None
     best_model_path = None
@@ -33,11 +35,12 @@ def select_best_model():
             # Get the path to the checkpoint file
             best_model_path = f"/mlflow/artifacts/{run_id}/artifacts/checkpoint.h5"
             # Load the model from the checkpoint file
-            #best_model_checkpoint = load_model(checkpoint_path)
+            # best_model_checkpoint = load_model(checkpoint_path)
             # best_model = mlflow.keras.load_model(f"runs:/{run_id}/model")
 
-    #return best_run_id, best_accuracy
+    # return best_run_id, best_accuracy
     return best_model_path, best_run_id, best_accuracy
+
 
 if __name__ == "__main__":
     # Print MLflow information
@@ -45,7 +48,7 @@ if __name__ == "__main__":
 
     # Select the best model
     best_model_path, best_run_id, best_accuracy = select_best_model()
-    #best_run_id, best_accuracy = select_best_model()
+    # best_run_id, best_accuracy = select_best_model()
 
     if best_run_id is not None:
         print(f"Best model accuracy: {best_accuracy}")

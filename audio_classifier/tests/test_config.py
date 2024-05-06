@@ -1,5 +1,3 @@
-
-
 def test_audiocnn_config_name_valid(audio_cnn_yaml_config):
     assert audio_cnn_yaml_config.config["model_name"] == "AudioCNNModel"
 

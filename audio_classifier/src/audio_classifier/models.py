@@ -1,13 +1,17 @@
-
 import tensorflow as tf
 
 from .config import AudioCNNModelConfig
 from .layers import MelSpecLayer, AudioCNNPreprocessingLayer
-from .layers import AudioCNNFrontEndLayer, AudioCNNEmbeddingLayer, AudioCNNActivationLayer
+from .layers import (
+    AudioCNNFrontEndLayer,
+    AudioCNNEmbeddingLayer,
+    AudioCNNActivationLayer,
+)
 
 
 class AudioCNNModel(tf.keras.Model):
     """Our custom AudioCNN keras model"""
+
     def __init__(self, config: AudioCNNModelConfig) -> None:
         super(AudioCNNModel, self).__init__()
         # feature extractor and preprocessors (only used for training and validation)

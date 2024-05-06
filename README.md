@@ -1,15 +1,10 @@
 # ml-training-airflow-mlflow-example
 
-Audio ML training job on Airflow with MlFlow experiment tracking.
-
-![example workflow](https://github.com/albincorreya/mlops-training-pipeline-demo/actions/workflows/push.yaml/badge.svg)
+This project is a inspired by repository https://github.com/albincorreya/ml-training-airflow-mlflow-example/'s repository. The problem with poetry is debbugged and I add some stuff of my own : a step of non-regression test.
 
 This is an example of setting up local MLOPs training pipeline infrastructure with some dummy production ready ML research code on a local server.
 
-> Note: This purely meant as an educational content for data scientists to get familiar with open-source tools like Airflow, MLFlow along with an example of packaing a custom python deep learning library.
-
-> Note, this solution strictly considers the restrictions of local (on-premise) server setup using open-source technolgies. There are more alternatives if you are looking for cloud platform solutions. Also, the infrastructure setup here is not production-ready and soley meant for educational purpose.
-
+This purely meant as an educational content for data scientists to get familiar with open-source tools like Airflow, MLFlow along with an example of packaing a custom python deep learning library.
 
 The project is structured as below
 - [audio_classifier](./audio_classifier): Custom python library for training deep learning audio classifiers. 
@@ -38,6 +33,7 @@ Tools used:
 
 ## Getting started 
 
+- Make sure you download the dataset as per the instructions described [here](./data/README.md).
 
 - One command to spin up everything
 
@@ -45,20 +41,19 @@ Tools used:
 docker-compose up --build airflow
 ```
 
-> Your admin password passowrd of airflow UI can be accesed from the logs for first-time login
+
+```
+sudo chmod -R 777 mlflows
+```
+
+> Your admin password passwowrd of airflow UI can be accesed from the logs for first-time login:
+Search for : Login with username: admin  password: xxxxxxxxxxxxx
 
 ### Access dashboard
 
 - MLFlow UI: http://localhost:5000
   
 - Airflow UI: http://localhost:8080
-
->> Note: the login credentials for airflow are sent by email. PLease reachout if you haven't received it.
-
-## Dataset
-
-Make sure you download the dataset as per the instructions described [here](./data/README.md).
-
 
 ## Run DAG using Airflow
 
@@ -81,58 +76,34 @@ We can also see a visualisation of ML training pipeline DAG
   
 ![alt text](./assets/trigger-job-example.png)
 
-
-## Experiment and model artifact tracking with MLFlow
-
-![alt text](./assets/tracking-lists.png)
-
-![alt text](./assets/artifacts.png)
-
-![alt text](./assets/metrics.png)
-
-## Local development Setup
-
-- Launch our MLOps infrastructure with the following command 
-
-```bash
-docker-compose up --build mlflow
-```
-
-Once it is up you can access the web interfaces of both Airflow and MLFlow at the following addresses 
-
-http://localhost:8080 and http://localhost:5000
+Trigger DAG w/config  
+{
+    "enable_preprocess": true,
+    "preprocess": {
+      "dataset_version": 1,
+      "audio_dir": "/opt/airflow/local-assets/raw_input_data/recordings",
+      "output_dir": "/opt/airflow/local-assets/tfrecord_datasets"
+    },
+    "train": {
+      "dataset_path": "/opt/airflow/local-assets/tfrecord_datasets/MNIST-audio/1",
+      "n_epochs": 2,
+      "data_batch_size": 32,
+      "model_yaml_config": "/opt/airflow/dags/model-config.yaml"
+    }
+  }
+![Example Trigger DAG w/config](./assets/trigger-job-example.png)
 
 
-> NOTE: For simplicity a reverse proxy wasn't added to the stack. But, a nginx server or similar could be added before deploying into a server
+## Simplon
+
+[Simplon](https://www.https://simplon.co/) is a French programming school distinguished by its inclusive approach, making programming education accessible to all. Founded on the principle of digital inclusion, Simplon offers free training in web development, AI development, and data analysis, open to everyone regardless of their starting level. Through hands-on learning and personalized support, Simplon enables individuals, including those distant from the job market, to learn digital skills and find employment in this rapidly growing sector.
 
 
-### Run your scripts from command line
+## License
 
-Once the Airflow server is up run the following command
-
-```bash
-docker-compose run airflow bash
-# once inside the shell
-airflow trigger_dag 'example_dag_conf' -r 'run_id' --conf '{"message":"value"}'
-```
-
-#### Using only MLFlow Tracking
-
-Once the MlFlow server is up run the following command
-
-```bash
-docker-compose run mlflow bash
-# once inside the shell
-python scripts/ml/train.py --help
-```
+This project is licensed under the [MIT license](LICENSE).
 
 
-## Things nice-to-have in future iterations
+## Author
 
-- Full fledge CI/CD pipeline on the repository
-- More elaborate doc strings in python code of `audio_classifier`.
-- Deploying Airflow more production ready mode (Now we are using SQLite backend for simplicity).
-- Adding reverse-proxy (eg. nginx) for both remote MLFlow and Airflow tracking servers.
-
-
-# Brief_17_Airflow
+This project was created by Pauline Fouquet
